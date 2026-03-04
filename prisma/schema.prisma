@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  CUSTOMER
+}
+
+model Shop {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  location  Unsupported("geography(Point, 4326)")
+  ownerId   String?  @db.Uuid  
+  owner     User?    @relation("OwnerShops", fields: [ownerId], references: [id])
+  products  Product[]
+  sales     Sale[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  shopId      String   @db.Uuid
+  shop        Shop     @relation(fields: [shopId], references: [id])
+  sales       Sale[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Sale {
+  id          String   @id @default(uuid()) @db.Uuid
+  productId   String   @db.Uuid
+  product     Product  @relation(fields: [productId], references: [id])
+  shopId      String   @db.Uuid
+  shop        Shop     @relation(fields: [shopId], references: [id])
+  userId      String?  @db.Uuid
+  user        User?    @relation(fields: [userId], references: [id])
+  quantity    Int
+  totalAmount Decimal  @db.Decimal(10, 2)
+  soldAt      DateTime @default(now())
+}
+
+model User {
+  id         String  @id @default(uuid()) @db.Uuid
+  email      String  @unique
+  password   String
+  refreshToken String?
+  role       Role    @default(CUSTOMER)
+  sales      Sale[]
+  ownedShops Shop[]  @relation("OwnerShops")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
