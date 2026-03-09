@@ -18,7 +18,7 @@ export class AuthService {
     const tokens = this.generateTokens(user.id, user.role);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
-    return tokens;
+    return { tokens, userId: user.id };
   }
 
   static async authenticateUser(data: LoginInput) {

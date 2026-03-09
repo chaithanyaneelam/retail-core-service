@@ -2,20 +2,19 @@ import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import "dotenv/config";
 import authRoutes from "./routes/auth.routes";
+import productRoutes from "./routes/product.route";
+import saleRoutes from "./routes/sale.route";
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
-// --- Middlewares ---
-// CORS allows your Flutter/React apps to talk to this API
 app.use(cors());
 
-// Professional body-parsing with a size limit to prevent DOS attacks
 app.use(express.json({ limit: "10kb" }));
 
-// --- Routes ---
-// We prefix auth routes for a clean API structure
 app.use("/api/auth", authRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/sales", saleRoutes);
 
 // Health Check: Standard for professional monitoring
 app.get("/health", (req: Request, res: Response) => {

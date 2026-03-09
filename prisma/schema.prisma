@@ -34,6 +34,7 @@ model Product {
   name        String
   description String?
   price       Decimal  @db.Decimal(10, 2)
+  stock       Int      @default(0)
   shopId      String   @db.Uuid
   shop        Shop     @relation(fields: [shopId], references: [id])
   sales       Sale[]
