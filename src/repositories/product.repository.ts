@@ -19,4 +19,11 @@ export class ProductRepository {
       },
     });
   }
+
+  static async getByShopId(shopId: string) {
+    return await prisma.product.findMany({
+      where: { shopId },
+      orderBy: { updatedAt: "desc" },
+    });
+  }
 }

@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Retail Core - Admin Dashboard</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #f4f7f6;
+        padding: 30px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      .card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      h2 {
+        margin-top: 0;
+        color: #2c3e50;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+        font-size: 1.2rem;
+      }
+      input,
+      select,
+      button {
+        width: 100%;
+        padding: 10px;
+        margin: 6px 0;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-sizing: border-box;
+      }
+      button {
+        background: #27ae60;
+        color: white;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+      button:hover {
+        background: #219150;
+      }
+      .secondary {
+        background: #3498db;
+      }
+      .danger {
+        background: #e74c3c;
+      }
+      pre {
+        background: #2d3436;
+        color: #fab1a0;
+        padding: 15px;
+        border-radius: 8px;
+        grid-column: span 2;
+        max-height: 400px;
+        overflow-y: auto;
+        font-family: "Consolas", monospace;
+        font-size: 0.9rem;
+      }
+      .status-bar {
+        grid-column: span 2;
+        background: #fff;
+        padding: 10px;
+        border-radius: 8px;
+        border-left: 5px solid #27ae60;
+        font-size: 0.9rem;
+      }
+      .grid-row {
+        display: flex;
+        gap: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="status-bar" id="authStatus">
+      <strong>Status:</strong> Not Logged In | <strong>Token:</strong> None
+    </div>
+
+    <div class="card">
+      <h2>1. Authentication & Shop Setup</h2>
+      <input type="text" id="reg_name" placeholder="Owner Full Name" />
+      <input
+        type="text"
+        id="reg_shopName"
+        placeholder="Shop Name (e.g., Saveetha Mart)"
+      />
+      <div class="grid-row">
+        <input
+          type="number"
+          id="reg_lat"
+          placeholder="Latitude (e.g., 13.08)"
+          step="any"
+        />
+        <input
+          type="number"
+          id="reg_lng"
+          placeholder="Longitude (e.g., 80.27)"
+          step="any"
+        />
+      </div>
+      <input
+        type="email"
+        id="auth_email"
+        placeholder="Email"
+        value="chaithu@gmail.com"
+      />
+      <input
+        type="password"
+        id="auth_pass"
+        placeholder="Password"
+        value="password123"
+      />
+
+      <div class="grid-row">
+        <button onclick="handleAuth('/auth/register-owner', 'POST', true)">
+          Register Owner
+        </button>
+        <button
+          class="secondary"
+          onclick="handleAuth('/auth/login', 'POST', false)"
+        >
+          Login
+        </button>
+      </div>
+      <button class="danger" onclick="logout()">Clear Session (Logout)</button>
+    </div>
+
+    <div class="card">
+      <h2>2. Inventory Management</h2>
+      <input type="text" id="p_name" placeholder="Product Name" value="Lays" />
+      <input type="number" id="p_price" placeholder="Price" value="10" />
+      <input
+        type="number"
+        id="p_stock"
+        placeholder="Initial Stock"
+        value="120"
+      />
+
+      <button onclick="protectedRequest('/products', 'POST', 'product')">
+        Add Product
+      </button>
+      <button
+        class="secondary"
+        onclick="protectedRequest('/products/inventory', 'GET')"
+      >
+        View Full Inventory
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>3. Sales Operations</h2>
+      <input type="text" id="s_prodId" placeholder="Paste Product UUID here" />
+      <input type="number" id="s_qty" placeholder="Quantity" value="1" />
+
+      <button onclick="protectedRequest('/sales', 'POST', 'sale')">
+        Process Sale
+      </button>
+      <button
+        class="secondary"
+        onclick="protectedRequest('/sales/history', 'GET')"
+      >
+        Sale History
+      </button>
+    </div>
+
+    <pre id="console">System Ready. Check server logs if requests fail.</pre>
+
+    <script>
+      const API_URL = "http://localhost:5000/api";
+
+      function log(data) {
+        document.getElementById("console").textContent = JSON.stringify(
+          data,
+          null,
+          2,
+        );
+      }
+
+      function updateUI() {
+        const token = localStorage.getItem("token");
+        const status = document.getElementById("authStatus");
+        status.innerHTML = token
+          ? `<strong>Status:</strong> Logged In ✅ | <strong>Token:</strong> ${token.substring(0, 30)}...`
+          : `<strong>Status:</strong> Not Logged In ❌ | <strong>Token:</strong> None`;
+      }
+
+      async function handleAuth(endpoint, method, isReg) {
+        const body = {
+          email: document.getElementById("auth_email").value,
+          password: document.getElementById("auth_pass").value,
+        };
+
+        if (isReg) {
+          body.name = document.getElementById("reg_name").value;
+          body.shopName = document.getElementById("reg_shopName").value;
+          body.lat = parseFloat(document.getElementById("reg_lat").value);
+          body.lng = parseFloat(document.getElementById("reg_lng").value);
+        }
+
+        try {
+          const res = await fetch(API_URL + endpoint, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+
+          // Saving token from your flattened response structure
+          if (data.accessToken) {
+            localStorage.setItem("token", data.accessToken);
+            updateUI();
+          }
+          log(data);
+        } catch (err) {
+          log({ error: err.message });
+        }
+      }
+
+      async function protectedRequest(endpoint, method, type = null) {
+        const token = localStorage.getItem("token");
+        if (!token)
+          return log({ error: "No token found! Please Login first." });
+
+        let body = null;
+        if (type === "product") {
+          body = {
+            name: document.getElementById("p_name").value,
+            price: parseFloat(document.getElementById("p_price").value),
+            stock: parseInt(document.getElementById("p_stock").value),
+            // shopId is no longer passed in body; handled by JWT
+          };
+        } else if (type === "sale") {
+          body = {
+            productId: document.getElementById("s_prodId").value,
+            quantity: parseInt(document.getElementById("s_qty").value),
+            // shopId lookup is now handled by the server!
+          };
+        }
+
+        try {
+          const res = await fetch(API_URL + endpoint, {
+            method,
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: body ? JSON.stringify(body) : null,
+          });
+          const data = await res.json();
+          log(data);
+        } catch (err) {
+          log({ error: err.message });
+        }
+      }
+
+      function logout() {
+        localStorage.clear();
+        updateUI();
+        log({ message: "Session cleared." });
+      }
+
+      updateUI();
+    </script>
+  </body>
+</html>

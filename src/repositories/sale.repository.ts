@@ -1,3 +1,4 @@
+import { tr } from "zod/v4/locales";
 import { prisma } from "../lib/prisma";
 
 export class SaleRepository {
@@ -32,6 +33,22 @@ export class SaleRepository {
       });
 
       return sale;
+    });
+  }
+
+  static async getByShopId(shopId: string) {
+    return await prisma.sale.findMany({
+      where: { shopId },
+      include: {
+        product: {
+          select: {
+            name: true,
+            price: true,
+            stock: true,
+          },
+        },
+      },
+      orderBy: { soldAt: "desc" },
     });
   }
 }
