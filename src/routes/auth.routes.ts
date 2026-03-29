@@ -13,8 +13,13 @@ router.post(
   AuthController.registerCustomer.bind(AuthController),
 );
 
-router.post("/login", (req: Request, res: Response) => {
-  AuthController.login(req, res);
+router.post("/login-owner", (req: Request, res: Response) => {
+  AuthController.loginOwner(req, res);
 });
+
+router.post(
+  "/login-customer",
+  AuthController.loginCustomer.bind(AuthController),
+);
 
 export default router;

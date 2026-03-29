@@ -9,15 +9,16 @@ export class AuthRepository {
   static async createOwnerWithShop(data: {
     email: string;
     passwordHash: string;
+    name: string;
     shopName: string;
     lat: number;
     lng: number;
   }) {
     return await prisma.$transaction(async (tx) => {
-      // Create User first
       const user = await tx.user.create({
         data: {
           email: data.email,
+          name: data.name,
           password: data.passwordHash,
           role: "OWNER" as Role,
         },
@@ -52,12 +53,13 @@ export class AuthRepository {
         gen_random_uuid(), 
         ${data.email}, 
         ${data.name}, 
-        ${data.password}, 
+        ${data.passwordHash}, 
         ${data.phoneNumber}, 
-        'CUSTOMER',
+        'CUSTOMER'::"Role",
         ST_SetSRID(ST_MakePoint(${data.lng}, ${data.lat}), 4326)::geography,
         NOW()
       )
+      RETURNING id,role;
     `;
     return result[0];
   }

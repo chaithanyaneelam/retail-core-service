@@ -7,6 +7,7 @@ import {
   RegisterCustomerInput,
 } from "../validators/auth.validator";
 import { da } from "zod/v4/locales";
+import { custom } from "zod";
 
 export class AuthService {
   static async registerNewOwner(data: RegisterOwnerInput) {
@@ -29,6 +30,7 @@ export class AuthService {
   static async authenticateUser(data: LoginInput) {
     const user = await AuthRepository.findByEmail(data.email);
     if (!user) return null;
+    if (user.role !== "OWNER") throw new Error("NOT_AN_OWNER_ACCOUNT");
 
     const isPasswordValid = await argon2.verify(user.password, data.password);
     if (!isPasswordValid) return null;
@@ -36,7 +38,7 @@ export class AuthService {
     const tokens = this.generateTokens(user.id, user.role);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
-    return tokens;
+    return { tokens, userId: user.id, name: user.name };
   }
 
   static generateTokens(userId: string, role: string) {
@@ -74,5 +76,23 @@ export class AuthService {
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
     return { tokens, userId: user.id };
+  }
+
+  static async loginCustomer(data: LoginInput) {
+    const user = await AuthRepository.findByEmail(data.email);
+    if (!user) throw new Error("INVALID_CREDENTIALS");
+    if (user.role !== "CUSTOMER") throw new Error("NOT_A_CUSTOMER_ACCOUNT");
+
+    const isPasswordValid = await argon2.verify(user.password, data.password);
+    if (!isPasswordValid) throw Error("INVALID_CREDENTIALS");
+
+    const tokens = this.generateTokens(user.id, user.role);
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+
+    return {
+      tokens,
+      userId: user.id,
+      name: user.name,
+    };
   }
 }

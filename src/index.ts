@@ -5,7 +5,7 @@ import authRoutes from "./routes/auth.routes";
 import productRoutes from "./routes/product.route";
 import saleRoutes from "./routes/sale.route";
 import dashboardRoutes from "./routes/dashboard.route";
-
+import customerRoutes from "./routes/customer.route";
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
