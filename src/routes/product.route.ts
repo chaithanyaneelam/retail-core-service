@@ -12,4 +12,7 @@ router.get("/inventory", authenticate, (req: Request, res: Response) => {
   ProductController.getInventory(req, res);
 });
 
+router.patch("/:id", authenticate, ProductController.update);
+router.delete("/:id", authenticate, ProductController.delete);
+
 export default router;

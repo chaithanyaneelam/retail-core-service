@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retail Core | Merchant Portal</title>
+    <style>
+      :root {
+        --primary: #2563eb;
+        --secondary: #64748b;
+        --success: #22c55e;
+        --danger: #ef4444;
+        --dark: #0f172a;
+        --light: #f8fafc;
+        --border: #e2e8f0;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: var(--light);
+        margin: 0;
+        display: flex;
+        height: 100vh;
+        color: var(--dark);
+      }
+      nav {
+        width: 280px;
+        background: var(--dark);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        padding: 25px;
+        box-sizing: border-box;
+        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+      }
+      nav h1 {
+        font-size: 1.4rem;
+        margin-bottom: 40px;
+        color: #38bdf8;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 15px;
+      }
+      nav button {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        text-align: left;
+        padding: 14px;
+        font-size: 1rem;
+        cursor: pointer;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        transition: 0.3s;
+      }
+      nav button:hover,
+      nav button.active {
+        background: #1e293b;
+        color: white;
+        padding-left: 20px;
+      }
+      nav .logout {
+        margin-top: auto;
+        color: #f87171;
+        border: 1px solid #450a0a;
+      }
+
+      main {
+        flex: 1;
+        overflow-y: auto;
+        padding: 40px;
+        box-sizing: border-box;
+      }
+      .view {
+        display: none;
+        animation: fadeIn 0.3s ease;
+      }
+      .view.active {
+        display: block;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 25px;
+        margin-bottom: 40px;
+      }
+      .stat-card {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border-left: 6px solid var(--primary);
+      }
+      .stat-card h3 {
+        margin: 0;
+        color: var(--secondary);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+      }
+      .stat-card p {
+        margin: 12px 0 0;
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--dark);
+      }
+
+      .card {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+      }
+      h2 {
+        margin-top: 0;
+        font-weight: 700;
+        color: var(--dark);
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 20px;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 1rem;
+        box-sizing: border-box;
+      }
+      button.btn {
+        width: 100%;
+        padding: 14px;
+        margin-top: 10px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      button.btn-sm {
+        width: auto;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        margin: 2px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        color: white;
+        font-weight: bold;
+      }
+      .btn-edit {
+        background: #3498db;
+      }
+      .btn-delete {
+        background: var(--danger);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th {
+        text-align: left;
+        padding: 15px;
+        background: #f1f5f9;
+        color: var(--secondary);
+        font-size: 0.85rem;
+      }
+      td {
+        padding: 15px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .badge {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+      .badge-danger {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+      .badge-success {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+
+      #toast {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: var(--dark);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        display: none;
+        z-index: 1000;
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <h1>RetailCore Admin</h1>
+      <button onclick="navigate('home')" id="nav-home">📈 Dashboard</button>
+      <button onclick="navigate('inventory')" id="nav-inventory">
+        📦 Inventory
+      </button>
+      <button onclick="navigate('sales')" id="nav-sales">🛒 New Sale</button>
+      <button onclick="navigate('history')" id="nav-history">📜 History</button>
+      <button onclick="navigate('auth')" id="nav-auth">
+        🔑 Switch Account
+      </button>
+      <button onclick="logout()" class="logout">Logout Session</button>
+    </nav>
+
+    <main>
+      <div id="view-home" class="view">
+        <h2 id="display-shop-name">Loading Dashboard...</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Products</h3>
+            <p id="stat-products">0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Inventory Value</h3>
+            <p id="stat-value">₹0</p>
+          </div>
+          <div class="stat-card" style="border-left-color: var(--success)">
+            <h3>Today's Revenue</h3>
+            <p id="stat-revenue">₹0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Items Sold Today</h3>
+            <p id="stat-count">0</p>
+          </div>
+        </div>
+        <button class="btn" style="width: auto" onclick="fetchDashboard()">
+          Refresh Metrics
+        </button>
+      </div>
+
+      <div id="view-inventory" class="view">
+        <h2>Inventory Management</h2>
+        <div class="grid-2">
+          <div class="card">
+            <h3 id="inv-form-title">Add New Item</h3>
+            <input type="hidden" id="p-id" />
+            <input type="text" id="p-name" placeholder="Product Name" />
+            <input type="number" id="p-price" placeholder="Price (₹)" />
+            <input type="number" id="p-stock" placeholder="Quantity" />
+            <button class="btn" id="p-submit-btn" onclick="saveProduct()">
+              Save Product
+            </button>
+            <button
+              class="btn"
+              id="p-cancel-btn"
+              style="display: none; background: #94a3b8"
+              onclick="resetForm()"
+            >
+              Cancel
+            </button>
+          </div>
+          <div class="card">
+            <h3>Stock List</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Price</th>
+                  <th>Qty</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-list"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-sales" class="view">
+        <h2>Process Transaction</h2>
+        <div class="card" style="max-width: 500px">
+          <label>Select Product from Stock</label>
+          <select id="s-product-dropdown"></select>
+          <label>Quantity to Sell</label>
+          <input type="number" id="s-qty" value="1" min="1" />
+          <button
+            class="btn"
+            style="background: var(--success)"
+            onclick="processSale()"
+          >
+            Complete Sale
+          </button>
+        </div>
+      </div>
+
+      <div id="view-history" class="view">
+        <h2>Sales Records (Today)</h2>
+        <div class="card">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Product Name</th>
+                <th>Qty</th>
+                <th>Total Paid</th>
+              </tr>
+            </thead>
+            <tbody id="history-list"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-auth" class="view">
+        <div
+          class="card"
+          style="max-width: 450px; margin: auto; margin-top: 50px"
+        >
+          <h2>Merchant Login</h2>
+          <input
+            type="email"
+            id="a-email"
+            placeholder="Email"
+            value="chaithu@gmail.com"
+          />
+          <input
+            type="password"
+            id="a-pass"
+            placeholder="Password"
+            value="password123"
+          />
+          <button class="btn" onclick="handleAuth('login')">Sign In</button>
+          <hr
+            style="
+              margin: 20px 0;
+              border: 0;
+              border-top: 1px solid var(--border);
+            "
+          />
+          <h3>New Shop Registration</h3>
+          <input type="text" id="a-name" placeholder="Owner Name" />
+          <input type="text" id="a-shop" placeholder="Shop Name" />
+          <button class="btn secondary" onclick="handleAuth('register-owner')">
+            Register Shop
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <div id="toast">Notification Message</div>
+
+    <script>
+      const API = "http://localhost:5000/api";
+      let productsCache = [];
+
+      function notify(msg) {
+        const t = document.getElementById("toast");
+        t.innerText = msg;
+        t.style.display = "block";
+        setTimeout(() => (t.style.display = "none"), 3000);
+      }
+
+      function navigate(viewId) {
+        document
+          .querySelectorAll(".view")
+          .forEach((v) => v.classList.remove("active"));
+        document
+          .querySelectorAll("nav button")
+          .forEach((b) => b.classList.remove("active"));
+        document.getElementById("view-" + viewId).classList.add("active");
+        document.getElementById("nav-" + viewId).classList.add("active");
+
+        if (viewId === "home") fetchDashboard();
+        if (viewId === "inventory") fetchInventory();
+        if (viewId === "sales") populateDropdown();
+        if (viewId === "history") fetchHistory();
+      }
+
+      async function handleAuth(type) {
+        const body = { email: a_email.value, password: a_pass.value };
+        if (type === "register-owner") {
+          body.name = a_name.value;
+          body.shopName = a_shop.value;
+          body.lat = 13.08;
+          body.lng = 80.27;
+        }
+        const res = await fetch(`${API}/auth/${type}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (data.accessToken) {
+          localStorage.setItem("token", data.accessToken);
+          notify("Welcome back!");
+          navigate("home");
+        } else {
+          notify("Error: " + (data.error || "Check credentials"));
+        }
+      }
+
+      async function fetchDashboard() {
+        const data = await callApi("/dashboard/overview");
+        if (data) {
+          document.getElementById("display-shop-name").innerText =
+            data.shopName;
+          document.getElementById("stat-products").innerText =
+            data.totalProducts;
+          document.getElementById("stat-value").innerText =
+            `₹${data.totalStockValue}`;
+          document.getElementById("stat-revenue").innerText =
+            `₹${data.todayRevenue}`;
+          document.getElementById("stat-count").innerText =
+            data.todaySalesCount;
+        }
+      }
+
+      async function fetchInventory() {
+        const data = await callApi("/products/inventory");
+        if (data) {
+          productsCache = data.products;
+          const tbody = document.getElementById("inventory-list");
+          tbody.innerHTML = data.products
+            .map(
+              (p) => `
+                    <tr>
+                        <td><strong>${p.name}</strong></td>
+                        <td>₹${p.price}</td>
+                        <td>${p.stock}</td>
+                        <td><span class="badge ${p.isLowStock ? "badge-danger" : "badge-success"}">${p.isLowStock ? "LOW" : "OK"}</span></td>
+                        <td>
+                            <button class="btn-sm btn-edit" onclick="editProduct('${p.id}')">Edit</button>
+                            <button class="btn-sm btn-delete" onclick="deleteProduct('${p.id}')">Del</button>
+                        </td>
+                    </tr>
+                `,
+            )
+            .join("");
+        }
+      }
+
+      // --- Logic for Edit/Delete/Add ---
+      async function saveProduct() {
+        const id = document.getElementById("p-id").value;
+        const body = {
+          name: document.getElementById("p-name").value,
+          price: parseFloat(document.getElementById("p-price").value),
+          stock: parseInt(document.getElementById("p-stock").value),
+        };
+
+        const path = id ? `/products/${id}` : "/products";
+        const method = id ? "PATCH" : "POST";
+
+        const res = await callApi(path, method, body);
+        if (res) {
+          notify(id ? "Product Updated" : "Product Added");
+          resetForm();
+          fetchInventory();
+        }
+      }
+
+      function editProduct(id) {
+        const p = productsCache.find((item) => item.id === id);
+        if (!p) return;
+        document.getElementById("p-id").value = p.id;
+        document.getElementById("p-name").value = p.name;
+        document.getElementById("p-price").value = p.price;
+        document.getElementById("p-stock").value = p.stock;
+
+        document.getElementById("inv-form-title").innerText = "Edit Product";
+        document.getElementById("p-submit-btn").innerText = "Update Product";
+        document.getElementById("p-cancel-btn").style.display = "block";
+      }
+
+      async function deleteProduct(id) {
+        if (!confirm("Are you sure you want to delete this product?")) return;
+        const res = await callApi(`/products/${id}`, "DELETE");
+        if (res) {
+          notify("Product Deleted");
+          fetchInventory();
+        }
+      }
+
+      function resetForm() {
+        document.getElementById("p-id").value = "";
+        document.getElementById("p-name").value = "";
+        document.getElementById("p-price").value = "";
+        document.getElementById("p-stock").value = "";
+        document.getElementById("inv-form-title").innerText = "Add New Item";
+        document.getElementById("p-submit-btn").innerText = "Save Product";
+        document.getElementById("p-cancel-btn").style.display = "none";
+      }
+
+      async function populateDropdown() {
+        const data = await callApi("/products/inventory");
+        const select = document.getElementById("s-product-dropdown");
+        select.innerHTML = data.products
+          .map(
+            (p) =>
+              `<option value="${p.id}">${p.name} (Stock: ${p.stock})</option>`,
+          )
+          .join("");
+      }
+
+      async function processSale() {
+        const body = {
+          productId: document.getElementById("s-product-dropdown").value,
+          quantity: parseInt(document.getElementById("s-qty").value),
+        };
+        const res = await callApi("/sales", "POST", body);
+        if (res) {
+          notify("Sale Completed!");
+          navigate("home");
+        }
+      }
+
+      // --- Improved History Logic ---
+      async function fetchHistory() {
+        const data = await callApi("/sales/history");
+        if (data) {
+          const tbody = document.getElementById("history-list");
+          tbody.innerHTML = data
+            .map(
+              (s) => `
+                    <tr>
+                        <td>${new Date(s.soldAt).toLocaleTimeString()}</td>
+                        <td>${s.product?.name || "Unknown Product"}</td>
+                        <td>${s.quantity}</td>
+                        <td>₹${s.totalAmount}</td>
+                    </tr>
+                `,
+            )
+            .join("");
+        }
+      }
+
+      async function callApi(path, method = "GET", body = null) {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("auth");
+          return null;
+        }
+        try {
+          const options = {
+            method,
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          };
+          if (body) options.body = JSON.stringify(body);
+          const res = await fetch(API + path, options);
+          const data = await res.json();
+          if (res.status === 401) {
+            logout();
+            return null;
+          }
+          return data;
+        } catch (e) {
+          notify("API Request Failed");
+          return null;
+        }
+      }
+
+      function logout() {
+        localStorage.clear();
+        navigate("auth");
+      }
+      localStorage.getItem("token") ? navigate("home") : navigate("auth");
+    </script>
+  </body>
+</html>

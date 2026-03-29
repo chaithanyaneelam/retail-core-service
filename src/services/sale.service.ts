@@ -1,6 +1,7 @@
 import { SaleRepository } from "../repositories/sale.repository";
 import { ShopRepository } from "../repositories/shop.repository";
 import { CreateSaleInput } from "../validators/sale.validator";
+import { ProductRepository } from "../repositories/product.repository";
 
 export class SaleService {
   static async processSale(data: CreateSaleInput, ownerId: string) {

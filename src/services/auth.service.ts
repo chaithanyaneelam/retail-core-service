@@ -1,7 +1,12 @@
 import argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import { AuthRepository } from "../repositories/auth.repository";
-import { RegisterOwnerInput, LoginInput } from "../validators/auth.validator";
+import {
+  RegisterOwnerInput,
+  LoginInput,
+  RegisterCustomerInput,
+} from "../validators/auth.validator";
+import { da } from "zod/v4/locales";
 
 export class AuthService {
   static async registerNewOwner(data: RegisterOwnerInput) {
@@ -51,5 +56,23 @@ export class AuthService {
   static async updateRefreshToken(userId: string, token: string | null) {
     const hashedToken = token ? await argon2.hash(token) : null;
     await AuthRepository.update(userId, { refreshToken: hashedToken });
+  }
+
+  static async registerCustomer(data: RegisterCustomerInput) {
+    const existingUser = await AuthRepository.findByEmail(data.email);
+    if (existingUser) throw new Error("EMAIL_EXISTS");
+
+    const passwordHash = await argon2.hash(data.password);
+
+    const user = await AuthRepository.createCustomer({
+      ...data,
+      passwordHash,
+    });
+
+    const tokens = this.generateTokens(user.id, user.role);
+
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+
+    return { tokens, userId: user.id };
   }
 }

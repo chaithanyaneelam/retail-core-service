@@ -46,4 +46,26 @@ export class ProductService {
       products: inventoryWithAlerts,
     };
   }
+
+  static async updateProduct(
+    id: string,
+    ownerId: string,
+    data: { name?: string; price?: number },
+  ) {
+    const shop = await ShopRepository.findByOwnerId(ownerId);
+    if (!shop) throw new Error("SHOP_NOT_FOUND");
+
+    const updateData: any = {};
+    if (data.name) updateData.name = data.name;
+    if (data.price !== undefined) updateData.price = data.price.toString();
+
+    return await ProductRepository.update(id, shop.id, updateData);
+  }
+
+  static async deleteProduct(id: string, ownerId: string) {
+    const shop = await ShopRepository.findByOwnerId(ownerId);
+    if (!shop) throw new Error("SHOP_NOT_FOUND");
+
+    return await ProductRepository.delete(id, shop.id);
+  }
 }

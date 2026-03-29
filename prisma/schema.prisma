@@ -6,10 +6,13 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
+  extensions = [postgis]
+
 }
 
 enum Role {
@@ -20,11 +23,13 @@ enum Role {
 model Shop {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
+  phoneNumber     String?
   location  Unsupported("geography(Point, 4326)")
   ownerId   String?  @db.Uuid  
   owner     User?    @relation("OwnerShops", fields: [ownerId], references: [id])
   products  Product[]
   sales     Sale[]
+  orders    Order[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -35,9 +40,12 @@ model Product {
   description String?
   price       Decimal  @db.Decimal(10, 2)
   stock       Int      @default(0)
+  category    String   @default("General") 
+  imageUrl    String?
   shopId      String   @db.Uuid
   shop        Shop     @relation(fields: [shopId], references: [id])
   sales       Sale[]
+  orderItems  OrderItem[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -59,10 +67,54 @@ model User {
   id         String  @id @default(uuid()) @db.Uuid
   email      String  @unique
   password   String
+  phoneNumber  String?
+  location     Unsupported("geography(Point, 4326)")?
   refreshToken String?
   role       Role    @default(CUSTOMER)
   sales      Sale[]
   ownedShops Shop[]  @relation("OwnerShops")
+  orders       Order[]  @relation("CustomerOrders")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+
+
+enum OrderStatus {
+  PENDING          
+  ACCEPTED         
+  REJECTED          
+  PACKED            
+  OUT_FOR_DELIVERY 
+  COMPLETED        
+  CANCELLED
+}
+
+enum OrderType {
+  PICKUP
+  TAKEAWAY
+}
+
+model Order {
+  id           String      @id @default(uuid()) @db.Uuid
+  customerId   String      @db.Uuid
+  customer     User        @relation("CustomerOrders", fields: [customerId], references: [id])
+  shopId       String      @db.Uuid
+  shop         Shop        @relation(fields: [shopId], references: [id])
+  items        OrderItem[]
+  totalAmount  Decimal     @db.Decimal(10, 2)
+  status       OrderStatus @default(PENDING)
+  orderType    OrderType
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(uuid()) @db.Uuid
+  orderId   String  @db.Uuid
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String  @db.Uuid
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
 }

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { addProductSchema } from "../validators/product.validator";
 import { ProductService } from "../services/product.service";
+import { error } from "node:console";
 
 interface AuthRequest extends Request {
   user: {
@@ -48,6 +49,38 @@ export class ProductController {
     } catch (error: any) {
       console.log("Inventory fetch error", error);
       return res.status(500).json({ error: "Failed to fetch the inventory" });
+    }
+  }
+
+  static async update(req: Request, res: Response) {
+    try {
+      const authReq = req as unknown as AuthRequest;
+      const { id } = req.params;
+      if (!id || typeof id !== "string") {
+        return res.status(400).json({ error: "Product ID is required" });
+      }
+      const product = await ProductService.updateProduct(
+        id,
+        authReq.user.userId,
+        req.body,
+      );
+      return res.status(200).json({ message: "Product updated", product });
+    } catch (error) {
+      return res.status(500).json({ error: "Update failed" });
+    }
+  }
+
+  static async delete(req: Request, res: Response) {
+    try {
+      const authReq = req as unknown as AuthRequest;
+      const { id } = req.params;
+      if (!id || typeof id !== "string") {
+        return res.status(400).json({ error: "Product id is required" });
+      }
+      await ProductService.deleteProduct(id, authReq.user.userId);
+      return res.status(200).json({ message: "Product deleted successfully" });
+    } catch (error) {
+      return res.status(500).json({ error: "Delete failed" });
     }
   }
 }

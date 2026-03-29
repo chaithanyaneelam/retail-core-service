@@ -44,4 +44,21 @@ export class AuthRepository {
       data,
     });
   }
+
+  static async createCustomer(data: any) {
+    const result = await prisma.$queryRaw<any[]>`
+    INSERT INTO "User" (id, email, name, password, "phoneNumber", role, location, "updatedAt")
+      VALUES (
+        gen_random_uuid(), 
+        ${data.email}, 
+        ${data.name}, 
+        ${data.password}, 
+        ${data.phoneNumber}, 
+        'CUSTOMER',
+        ST_SetSRID(ST_MakePoint(${data.lng}, ${data.lat}), 4326)::geography,
+        NOW()
+      )
+    `;
+    return result[0];
+  }
 }

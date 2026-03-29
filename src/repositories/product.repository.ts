@@ -26,4 +26,21 @@ export class ProductRepository {
       orderBy: { updatedAt: "desc" },
     });
   }
+
+  static async update(
+    id: string,
+    shopId: string,
+    data: { name?: string; price?: string },
+  ) {
+    return await prisma.product.update({
+      where: { id, shopId },
+      data,
+    });
+  }
+
+  static async delete(id: string, shopId: string) {
+    return await prisma.product.delete({
+      where: { id, shopId },
+    });
+  }
 }

@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import { AuthService } from "../services/auth.service";
-import { registerOwnerSchema, loginSchema } from "../validators/auth.validator";
+import {
+  registerOwnerSchema,
+  loginSchema,
+  registerCustomerSchema,
+} from "../validators/auth.validator";
 
 export class AuthController {
   static async registerOwner(req: Request, res: Response) {
@@ -52,6 +56,19 @@ export class AuthController {
     } catch (error) {
       console.error("Login Error:", error);
       return res.status(500).json({ error: "Login failed." });
+    }
+  }
+
+  static async registerCustomer(req: Request, res: Response) {
+    try {
+      const validatedData = registerCustomerSchema.parse(req.body);
+      const result = await AuthService.registerCustomer(validatedData);
+
+      return res.status(201).json({ message: "Customer Created!", ...result });
+    } catch (error: any) {
+      if (error.name === "ZodError")
+        return res.status(400).json({ errors: error.errors });
+      return res.status(400).json({ error: error.message });
     }
   }
 }
